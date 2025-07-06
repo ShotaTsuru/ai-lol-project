@@ -1,0 +1,3 @@
+fast-mcp
+requests
+python-dotenv 

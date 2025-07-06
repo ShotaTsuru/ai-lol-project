@@ -78,4 +78,67 @@ setup: ## Set up development environment
 # Build for production
 build-prod: ## Build for production
 	cd frontend && npm run build
-	cd backend && go build -o main main.go 
+	cd backend && go build -o main main.go
+
+# GitHub MCP setup
+mcp-setup: ## Setup GitHub MCP server configuration
+	@echo "🔧 Setting up GitHub MCP server..."
+	@if [ ! -f ".vscode/mcp.json" ]; then \
+		echo "📋 Creating MCP configuration from sample..."; \
+		mkdir -p .vscode; \
+		cp .vscode/mcp.json.sample .vscode/mcp.json; \
+		echo "✅ MCP configuration file created"; \
+	else \
+		echo "✅ MCP configuration file already exists"; \
+	fi
+	@echo ""
+	@echo "📚 Please follow the instructions in MCP_SETUP_GUIDE.md"
+	@echo "1. Create a GitHub Personal Access Token"
+	@echo "2. Open this project in Visual Studio Code"
+	@echo "3. Click the 'Start' button in .vscode/mcp.json"
+	@echo "4. Enter your token when prompted"
+
+mcp-check: ## Check MCP configuration
+	@echo "🔍 Checking MCP configuration..."
+	@if [ -f ".vscode/mcp.json" ]; then \
+		echo "✅ MCP configuration file found"; \
+	else \
+		echo "❌ MCP configuration file not found"; \
+		echo "💡 Run 'make mcp-setup' to create it"; \
+		exit 1; \
+	fi
+
+mcp-clean: ## Clean MCP configuration
+	@echo "🧹 Cleaning MCP configuration..."
+	@rm -f .vscode/mcp.json
+	@echo "MCP configuration removed"
+	@echo "💡 Run 'make mcp-setup' to recreate it"
+
+mcp-reset: ## Reset MCP configuration from sample
+	@echo "🔄 Resetting MCP configuration..."
+	@rm -f .vscode/mcp.json
+	@cp .vscode/mcp.json.sample .vscode/mcp.json
+	@echo "✅ MCP configuration reset from sample"
+
+# League of Legends MCP Server
+lol-mcp-setup: ## Setup League of Legends MCP server
+	@echo "🎮 Setting up League of Legends MCP server..."
+	@chmod +x scripts/setup-lol-mcp.sh
+	@./scripts/setup-lol-mcp.sh
+
+lol-mcp-build: ## Build League of Legends MCP server
+	@echo "🔨 Building League of Legends MCP server..."
+	@cd mcp-servers/lol-mcp-server && npm run build
+
+lol-mcp-start: ## Start League of Legends MCP server
+	@echo "🚀 Starting League of Legends MCP server..."
+	@cd mcp-servers/lol-mcp-server && npm start
+
+lol-mcp-dev: ## Start League of Legends MCP server in development mode
+	@echo "🛠️  Starting League of Legends MCP server in development mode..."
+	@cd mcp-servers/lol-mcp-server && npm run dev
+
+lol-mcp-clean: ## Clean League of Legends MCP server build
+	@echo "🧹 Cleaning League of Legends MCP server..."
+	@cd mcp-servers/lol-mcp-server && rm -rf node_modules dist .env
+	@echo "✅ League of Legends MCP server cleaned"
