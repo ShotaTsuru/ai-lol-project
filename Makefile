@@ -119,3 +119,26 @@ mcp-reset: ## Reset MCP configuration from sample
 	@rm -f .vscode/mcp.json
 	@cp .vscode/mcp.json.sample .vscode/mcp.json
 	@echo "✅ MCP configuration reset from sample"
+
+# League of Legends MCP Server
+lol-mcp-setup: ## Setup League of Legends MCP server
+	@echo "🎮 Setting up League of Legends MCP server..."
+	@chmod +x scripts/setup-lol-mcp.sh
+	@./scripts/setup-lol-mcp.sh
+
+lol-mcp-build: ## Build League of Legends MCP server
+	@echo "🔨 Building League of Legends MCP server..."
+	@cd mcp-servers/lol-mcp-server && npm run build
+
+lol-mcp-start: ## Start League of Legends MCP server
+	@echo "🚀 Starting League of Legends MCP server..."
+	@cd mcp-servers/lol-mcp-server && npm start
+
+lol-mcp-dev: ## Start League of Legends MCP server in development mode
+	@echo "🛠️  Starting League of Legends MCP server in development mode..."
+	@cd mcp-servers/lol-mcp-server && npm run dev
+
+lol-mcp-clean: ## Clean League of Legends MCP server build
+	@echo "🧹 Cleaning League of Legends MCP server..."
+	@cd mcp-servers/lol-mcp-server && rm -rf node_modules dist .env
+	@echo "✅ League of Legends MCP server cleaned"
