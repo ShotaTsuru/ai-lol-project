@@ -14,5 +14,9 @@ COPY . .
 # 開発ポート
 EXPOSE 3000
 
-# 開発サーバーを起動
-CMD ["npm", "run", "dev"] 
+# ホットリロード用の環境変数
+ENV CHOKIDAR_USEPOLLING=true
+ENV WATCHPACK_POLLING=true
+
+# 開発サーバーを起動（ホストを0.0.0.0に設定）
+CMD ["npm", "run", "dev", "--", "--hostname", "0.0.0.0"] 

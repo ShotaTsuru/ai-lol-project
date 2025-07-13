@@ -1,9 +1,8 @@
-version: '3.8'
 
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: reverse-eng-postgres
+    container_name: lol-ai-postgres
     environment:
       POSTGRES_DB: reverse_engineering_db
       POSTGRES_USER: user
@@ -13,23 +12,23 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - reverse-eng-network
+      - lol-ai-network
 
   redis:
     image: redis:7-alpine
-    container_name: reverse-eng-redis
+    container_name: lol-ai-redis
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
-      - reverse-eng-network
+      - lol-ai-network
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
-    container_name: reverse-eng-backend
+    container_name: lol-ai-backend
     ports:
       - "8080:8080"
     environment:
@@ -43,13 +42,13 @@ services:
       - postgres
       - redis
     networks:
-      - reverse-eng-network
+      - lol-ai-network
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
-    container_name: reverse-eng-frontend
+    container_name: lol-ai-frontend
     ports:
       - "3000:3000"
     environment:
@@ -60,12 +59,12 @@ services:
     depends_on:
       - backend
     networks:
-      - reverse-eng-network
+      - lol-ai-network
 
 volumes:
   postgres_data:
   redis_data:
 
 networks:
-  reverse-eng-network:
+  lol-ai-network:
     driver: bridge
