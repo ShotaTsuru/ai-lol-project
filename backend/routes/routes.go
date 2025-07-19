@@ -2,17 +2,24 @@ package routes
 
 import (
 	"reverse-engineering-backend/controllers"
+	"reverse-engineering-backend/services/rag"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
+	"github.com/sashabaranov/go-openai"
 	"gorm.io/gorm"
 )
 
-func SetupRoutes(r *gin.Engine, db *gorm.DB, redis *redis.Client) {
+func SetupRoutes(r *gin.Engine, db *gorm.DB, redis *redis.Client, openaiClient *openai.Client) {
 	// コントローラーの初期化
 	projectController := controllers.NewProjectController(db, redis)
 	fileController := controllers.NewFileController(db)
 	analysisController := controllers.NewAnalysisController(db, redis)
+	
+	// RAGサービスの初期化
+	vectorStore := rag.NewChromaDBStore("http://chromadb:8000", "project_knowledge_base")
+	ragService := rag.NewRAGService(vectorStore, openaiClient, "project_knowledge_base")
+	ragController := controllers.NewRAGController(ragService)
 
 	// ヘルスチェック
 	r.GET("/health", func(c *gin.Context) {
@@ -51,6 +58,16 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, redis *redis.Client) {
 			analysis.GET("/project/:project_id", analysisController.GetAnalysisByProject)
 			analysis.GET("/:id", analysisController.GetAnalysis)
 			analysis.GET("/:id/status", analysisController.GetAnalysisStatus)
+		}
+
+		// RAG機能
+		rag := v1.Group("/rag")
+		{
+			rag.POST("/query", ragController.Query)
+			rag.POST("/documents", ragController.AddDocuments)
+			rag.GET("/collection", ragController.GetCollectionInfo)
+			rag.GET("/search", ragController.Search)
+			rag.GET("/health", ragController.HealthCheck)
 		}
 	}
 }
