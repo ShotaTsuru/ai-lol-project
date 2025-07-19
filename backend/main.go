@@ -10,6 +10,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/sashabaranov/go-openai"
 )
 
 func main() {
@@ -29,6 +30,13 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to connect to Redis:", err)
 	}
+
+	// OpenAIクライアントの初期化
+	openaiAPIKey := os.Getenv("OPENAI_API_KEY")
+	if openaiAPIKey == "" {
+		log.Println("Warning: OPENAI_API_KEY not set, RAG functionality will be limited")
+	}
+	openaiClient := openai.NewClient(openaiAPIKey)
 
 	// Ginエンジンの初期化
 	if os.Getenv("GO_ENV") == "production" {
@@ -50,7 +58,7 @@ func main() {
 	r.Use(cors.New(config))
 
 	// ルートの設定
-	routes.SetupRoutes(r, db, redis)
+	routes.SetupRoutes(r, db, redis, openaiClient)
 
 	// サーバー起動
 	port := os.Getenv("PORT")
