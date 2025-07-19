@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"reverse-engineering-backend/models"
-	"reverse-engineering-backend/services"
+	"reverse-engineering-backend/infrastructure/external/openai"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
@@ -17,7 +17,7 @@ import (
 type AnalysisController struct {
 	db            *gorm.DB
 	redis         *redis.Client
-	aiService     *services.AIService
+	aiService     *openai.OpenAIService
 	analysisQueue string
 }
 
@@ -25,7 +25,7 @@ func NewAnalysisController(db *gorm.DB, redis *redis.Client) *AnalysisController
 	return &AnalysisController{
 		db:            db,
 		redis:         redis,
-		aiService:     services.NewAIService(),
+		aiService:     openai.NewOpenAIService().(*openai.OpenAIService),
 		analysisQueue: "analysis:queue",
 	}
 }

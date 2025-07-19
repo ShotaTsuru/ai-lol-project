@@ -1,4 +1,4 @@
-package rag
+package chromadb
 
 import (
 	"context"
@@ -6,35 +6,21 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"reverse-engineering-backend/domain/entities"
+	"reverse-engineering-backend/domain/repositories"
 	"strings"
 )
 
-// Document represents a document in the vector store
-type Document struct {
-	ID        string                 `json:"id"`
-	Content   string                 `json:"content"`
-	Metadata  map[string]interface{} `json:"metadata"`
-	Embedding []float64              `json:"embedding,omitempty"`
-}
-
-// VectorStore interface for vector database operations
-type VectorStore interface {
-	AddDocuments(ctx context.Context, documents []Document) error
-	Search(ctx context.Context, query string, limit int) ([]Document, error)
-	DeleteCollection(ctx context.Context, collectionName string) error
-	CreateCollection(ctx context.Context, collectionName string) error
-}
-
-// ChromaDBStore implements VectorStore using ChromaDB
-type ChromaDBStore struct {
+// ChromaDBVectorRepository implements VectorRepository using ChromaDB
+type ChromaDBVectorRepository struct {
 	client     *http.Client
 	baseURL    string
 	collection string
 }
 
-// NewChromaDBStore creates a new ChromaDB store instance
-func NewChromaDBStore(baseURL, collection string) *ChromaDBStore {
-	return &ChromaDBStore{
+// NewChromaDBVectorRepository creates a new ChromaDB vector repository instance
+func NewChromaDBVectorRepository(baseURL, collection string) repositories.VectorRepository {
+	return &ChromaDBVectorRepository{
 		client:     &http.Client{},
 		baseURL:    baseURL,
 		collection: collection,
@@ -42,7 +28,7 @@ func NewChromaDBStore(baseURL, collection string) *ChromaDBStore {
 }
 
 // CreateCollection creates a new collection in ChromaDB
-func (c *ChromaDBStore) CreateCollection(ctx context.Context, collectionName string) error {
+func (c *ChromaDBVectorRepository) CreateCollection(ctx context.Context, collectionName string) error {
 	url := fmt.Sprintf("%s/api/v1/collections", c.baseURL)
 
 	// For now, we'll skip collection creation as it might already exist
@@ -85,7 +71,7 @@ func (c *ChromaDBStore) CreateCollection(ctx context.Context, collectionName str
 }
 
 // AddDocuments adds documents to the vector store
-func (c *ChromaDBStore) AddDocuments(ctx context.Context, documents []Document) error {
+func (c *ChromaDBVectorRepository) AddDocuments(ctx context.Context, documents []entities.Document) error {
 	if len(documents) == 0 {
 		return nil
 	}
@@ -102,13 +88,13 @@ func (c *ChromaDBStore) AddDocuments(ctx context.Context, documents []Document) 
 }
 
 // Search searches for similar documents
-func (c *ChromaDBStore) Search(ctx context.Context, query string, limit int) ([]Document, error) {
+func (c *ChromaDBVectorRepository) Search(ctx context.Context, query string, limit int) ([]entities.Document, error) {
 	// For now, we'll return mock documents
 	// In a production environment, you'd want to use the actual ChromaDB API
 	log.Printf("Searching for: %s (limit: %d)", query, limit)
 
 	// Return mock documents based on query
-	mockDocuments := []Document{
+	mockDocuments := []entities.Document{
 		{
 			ID:      "doc_1",
 			Content: "このプロジェクトは、Go + Next.js + PostgreSQL + Redis による現代的なWebアプリケーション開発のためのテンプレートプロジェクトです。",
@@ -135,7 +121,7 @@ func (c *ChromaDBStore) Search(ctx context.Context, query string, limit int) ([]
 }
 
 // DeleteCollection deletes a collection
-func (c *ChromaDBStore) DeleteCollection(ctx context.Context, collectionName string) error {
+func (c *ChromaDBVectorRepository) DeleteCollection(ctx context.Context, collectionName string) error {
 	url := fmt.Sprintf("%s/api/v1/collections/%s", c.baseURL, collectionName)
 
 	req, err := http.NewRequestWithContext(ctx, "DELETE", url, nil)

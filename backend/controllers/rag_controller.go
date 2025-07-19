@@ -2,22 +2,24 @@ package controllers
 
 import (
 	"net/http"
+	"reverse-engineering-backend/domain/entities"
+	"reverse-engineering-backend/usecases/rag"
 	"strconv"
-
-	"reverse-engineering-backend/services/rag"
 
 	"github.com/gin-gonic/gin"
 )
 
 // RAGController handles RAG-related HTTP requests
 type RAGController struct {
-	ragService *rag.RAGService
+	queryUseCase    *rag.RAGQueryUseCase
+	indexingUseCase *rag.RAGIndexingUseCase
 }
 
 // NewRAGController creates a new RAG controller
-func NewRAGController(ragService *rag.RAGService) *RAGController {
+func NewRAGController(queryUseCase *rag.RAGQueryUseCase, indexingUseCase *rag.RAGIndexingUseCase) *RAGController {
 	return &RAGController{
-		ragService: ragService,
+		queryUseCase:    queryUseCase,
+		indexingUseCase: indexingUseCase,
 	}
 }
 
@@ -29,7 +31,7 @@ type QueryRequest struct {
 
 // AddDocumentRequest represents a request to add documents
 type AddDocumentRequest struct {
-	Documents []rag.Document `json:"documents" binding:"required"`
+	Documents []entities.Document `json:"documents" binding:"required"`
 }
 
 // Query handles RAG queries
@@ -46,7 +48,7 @@ func (rc *RAGController) Query(c *gin.Context) {
 		req.MaxResults = 5
 	}
 
-	result, err := rc.ragService.Query(c.Request.Context(), req.Question, req.MaxResults)
+	result, err := rc.queryUseCase.Execute(c.Request.Context(), req.Question, req.MaxResults)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to process query: " + err.Error(),
@@ -70,7 +72,7 @@ func (rc *RAGController) AddDocuments(c *gin.Context) {
 		return
 	}
 
-	if err := rc.ragService.AddDocuments(c.Request.Context(), req.Documents); err != nil {
+	if err := rc.indexingUseCase.Execute(c.Request.Context(), req.Documents); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to add documents: " + err.Error(),
 		})
@@ -81,22 +83,6 @@ func (rc *RAGController) AddDocuments(c *gin.Context) {
 		"success": true,
 		"message": "Documents added successfully",
 		"count":   len(req.Documents),
-	})
-}
-
-// GetCollectionInfo returns information about the current collection
-func (rc *RAGController) GetCollectionInfo(c *gin.Context) {
-	info, err := rc.ragService.GetCollectionInfo(c.Request.Context())
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get collection info: " + err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data":    info,
 	})
 }
 
@@ -116,9 +102,8 @@ func (rc *RAGController) Search(c *gin.Context) {
 		limit = 5
 	}
 
-	// Get vector store from RAG service (this would need to be exposed)
-	// For now, we'll use the RAG service's query method
-	result, err := rc.ragService.Query(c.Request.Context(), query, limit)
+	// Use the query use case for search
+	result, err := rc.queryUseCase.Execute(c.Request.Context(), query, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to search: " + err.Error(),
@@ -138,7 +123,8 @@ func (rc *RAGController) Search(c *gin.Context) {
 
 // HealthCheck checks if the RAG service is healthy
 func (rc *RAGController) HealthCheck(c *gin.Context) {
-	info, err := rc.ragService.GetCollectionInfo(c.Request.Context())
+	// Simple health check - try to execute a test query
+	_, err := rc.queryUseCase.Execute(c.Request.Context(), "test", 1)
 	if err != nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"status": "unhealthy",
@@ -148,7 +134,7 @@ func (rc *RAGController) HealthCheck(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status": "healthy",
-		"info":   info,
+		"status":  "healthy",
+		"message": "RAG service is operational",
 	})
 }
