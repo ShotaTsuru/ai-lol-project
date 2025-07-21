@@ -1,20 +1,6 @@
-package dto
+package responses
 
 import "time"
-
-// CreateProjectRequest プロジェクト作成リクエスト
-type CreateProjectRequest struct {
-	Name        string `json:"name" binding:"required"`
-	Description string `json:"description"`
-	UserID      uint   `json:"user_id" binding:"required"`
-}
-
-// UpdateProjectRequest プロジェクト更新リクエスト
-type UpdateProjectRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Status      string `json:"status"`
-}
 
 // ProjectResponse プロジェクトレスポンス
 type ProjectResponse struct {
@@ -36,14 +22,6 @@ type ProjectListResponse struct {
 	Limit    int               `json:"limit"`
 }
 
-// FileUploadRequest ファイルアップロードリクエスト
-type FileUploadRequest struct {
-	ProjectID uint   `json:"project_id" binding:"required"`
-	Name      string `json:"name" binding:"required"`
-	Content   string `json:"content" binding:"required"`
-	Language  string `json:"language"`
-}
-
 // FileResponse ファイルレスポンス
 type FileResponse struct {
 	ID        uint      `json:"id"`
@@ -57,12 +35,6 @@ type FileResponse struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// AnalysisRequest 解析開始リクエスト
-type AnalysisRequest struct {
-	ProjectID uint     `json:"project_id" binding:"required"`
-	Types     []string `json:"types" binding:"required"`
-}
-
 // AnalysisResponse 解析レスポンス
 type AnalysisResponse struct {
 	ID        uint      `json:"id"`
@@ -73,4 +45,26 @@ type AnalysisResponse struct {
 	Result    string    `json:"result,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// RAGQueryResponse RAG検索レスポンス
+type RAGQueryResponse struct {
+	Success bool `json:"success"`
+	Data    struct {
+		Answer     string     `json:"answer"`
+		Sources    []Document `json:"sources"`
+		Confidence float64    `json:"confidence"`
+	} `json:"data"`
+}
+
+// Document ドキュメント
+type Document struct {
+	ID       string                 `json:"id"`
+	Content  string                 `json:"content"`
+	Metadata map[string]interface{} `json:"metadata"`
+}
+
+// ErrorResponse エラーレスポンス
+type ErrorResponse struct {
+	Error string `json:"error"`
 }

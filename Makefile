@@ -82,8 +82,8 @@ generate-openapi-types: ## Generate only DTO types from OpenAPI specification
 		echo "📦 Installing oapi-codegen..."; \
 		go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest; \
 	fi
-	@mkdir -p backend/controllers/dto
-	@oapi-codegen -package dto -generate types openapi.yaml > backend/controllers/dto/generated_types.go
+	@mkdir -p backend/dto/generated
+	@oapi-codegen -package generated -generate types openapi.yaml > backend/dto/generated/types.go
 	@echo "✅ OpenAPI types generated"
 
 generate-openapi-server: ## Generate server code from OpenAPI specification
@@ -92,8 +92,8 @@ generate-openapi-server: ## Generate server code from OpenAPI specification
 		echo "📦 Installing oapi-codegen..."; \
 		go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest; \
 	fi
-	@mkdir -p backend/controllers/dto
-	@oapi-codegen -package dto -generate server openapi.yaml > backend/controllers/dto/generated_server.go
+	@mkdir -p backend/dto/generated
+	@oapi-codegen -package generated -generate server openapi.yaml > backend/dto/generated/server.go
 	@echo "✅ OpenAPI server code generated"
 
 generate-openapi-spec: ## Generate spec validation from OpenAPI specification
@@ -102,8 +102,8 @@ generate-openapi-spec: ## Generate spec validation from OpenAPI specification
 		echo "📦 Installing oapi-codegen..."; \
 		go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest; \
 	fi
-	@mkdir -p backend/controllers/dto
-	@oapi-codegen -package dto -generate spec openapi.yaml > backend/controllers/dto/generated_spec.go
+	@mkdir -p backend/dto/generated
+	@oapi-codegen -package generated -generate spec openapi.yaml > backend/dto/generated/spec.go
 	@echo "✅ OpenAPI spec validation generated"
 
 validate-openapi: ## Validate OpenAPI specification
@@ -127,7 +127,7 @@ openapi-docs: ## Generate OpenAPI documentation
 
 clean-openapi: ## Clean generated OpenAPI files
 	@echo "🧹 Cleaning generated OpenAPI files..."
-	@rm -f backend/controllers/dto/generated_*.go
+	@rm -f backend/dto/generated/*.go
 	@echo "✅ Generated OpenAPI files cleaned"
 
 watch-openapi: ## Watch OpenAPI file changes and auto-generate code
