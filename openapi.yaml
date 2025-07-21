@@ -1,0 +1,556 @@
+openapi: 3.0.3
+info:
+  title: AI Reverse Engineering API
+  description: AI駆動のリバースエンジニアリング支援API
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+  - url: https://api.example.com
+    description: Production server
+
+paths:
+  /api/v1/projects:
+    get:
+      summary: プロジェクト一覧取得
+      operationId: getProjects
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    
+    post:
+      summary: プロジェクト作成
+      operationId: createProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '201':
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/projects/{id}:
+    get:
+      summary: プロジェクト詳細取得
+      operationId: getProject
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    
+    put:
+      summary: プロジェクト更新
+      operationId: updateProject
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProjectRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    
+    delete:
+      summary: プロジェクト削除
+      operationId: deleteProject
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '204':
+          description: 削除成功
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/files/upload:
+    post:
+      summary: ファイルアップロード
+      operationId: uploadFiles
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                project_id:
+                  type: integer
+                  minimum: 1
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+              required:
+                - project_id
+                - files
+      responses:
+        '201':
+          description: アップロード成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  files:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FileResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/analysis/start:
+    post:
+      summary: 解析開始
+      operationId: startAnalysis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalysisRequest'
+      responses:
+        '201':
+          description: 解析開始成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  analyses:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AnalysisResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/rag/query:
+    post:
+      summary: RAG検索
+      operationId: ragQuery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RAGQueryRequest'
+      responses:
+        '200':
+          description: 検索成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RAGQueryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    CreateProjectRequest:
+      type: object
+      required:
+        - name
+        - user_id
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: プロジェクト名
+        description:
+          type: string
+          maxLength: 1000
+          description: プロジェクトの説明
+        user_id:
+          type: integer
+          minimum: 1
+          description: ユーザーID
+      example:
+        name: "My Project"
+        description: "This is my project description"
+        user_id: 1
+
+    UpdateProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: プロジェクト名
+        description:
+          type: string
+          maxLength: 1000
+          description: プロジェクトの説明
+        status:
+          type: string
+          enum: [pending, analyzing, completed, failed]
+          description: プロジェクトステータス
+      example:
+        name: "Updated Project"
+        description: "Updated description"
+        status: "completed"
+
+    ProjectResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          description: プロジェクトID
+        name:
+          type: string
+          description: プロジェクト名
+        description:
+          type: string
+          description: プロジェクトの説明
+        user_id:
+          type: integer
+          minimum: 1
+          description: ユーザーID
+        status:
+          type: string
+          enum: [pending, analyzing, completed, failed]
+          description: プロジェクトステータス
+        created_at:
+          type: string
+          format: date-time
+          description: 作成日時
+        updated_at:
+          type: string
+          format: date-time
+          description: 更新日時
+        file_count:
+          type: integer
+          minimum: 0
+          description: ファイル数
+      required:
+        - id
+        - name
+        - user_id
+        - status
+        - created_at
+        - updated_at
+
+    ProjectListResponse:
+      type: object
+      properties:
+        projects:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectResponse'
+        total:
+          type: integer
+          minimum: 0
+          description: 総件数
+        page:
+          type: integer
+          minimum: 1
+          description: 現在のページ
+        limit:
+          type: integer
+          minimum: 1
+          description: 1ページあたりの件数
+      required:
+        - projects
+        - total
+        - page
+        - limit
+
+    FileResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          description: ファイルID
+        project_id:
+          type: integer
+          minimum: 1
+          description: プロジェクトID
+        name:
+          type: string
+          description: ファイル名
+        path:
+          type: string
+          description: ファイルパス
+        size:
+          type: integer
+          minimum: 0
+          description: ファイルサイズ（バイト）
+        mime_type:
+          type: string
+          description: MIMEタイプ
+        language:
+          type: string
+          description: プログラミング言語
+        created_at:
+          type: string
+          format: date-time
+          description: 作成日時
+        updated_at:
+          type: string
+          format: date-time
+          description: 更新日時
+      required:
+        - id
+        - project_id
+        - name
+        - path
+        - size
+        - created_at
+        - updated_at
+
+    AnalysisRequest:
+      type: object
+      required:
+        - project_id
+        - types
+      properties:
+        project_id:
+          type: integer
+          minimum: 1
+          description: プロジェクトID
+        types:
+          type: array
+          items:
+            type: string
+            enum: [code_analysis, dependency_map, documentation, pattern_detection]
+          minItems: 1
+          description: 解析タイプのリスト
+      example:
+        project_id: 1
+        types: ["code_analysis", "documentation"]
+
+    AnalysisResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          description: 解析ID
+        project_id:
+          type: integer
+          minimum: 1
+          description: プロジェクトID
+        file_id:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: ファイルID（オプション）
+        type:
+          type: string
+          enum: [code_analysis, dependency_map, documentation, pattern_detection]
+          description: 解析タイプ
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+          description: 解析ステータス
+        result:
+          type: string
+          description: 解析結果
+        created_at:
+          type: string
+          format: date-time
+          description: 作成日時
+        updated_at:
+          type: string
+          format: date-time
+          description: 更新日時
+      required:
+        - id
+        - project_id
+        - type
+        - status
+        - created_at
+        - updated_at
+
+    RAGQueryRequest:
+      type: object
+      required:
+        - question
+      properties:
+        question:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          description: 質問内容
+        max_results:
+          type: integer
+          minimum: 1
+          maximum: 20
+          default: 5
+          description: 最大結果数
+      example:
+        question: "このプロジェクトの技術スタックは何ですか？"
+        max_results: 5
+
+    RAGQueryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: 成功フラグ
+        data:
+          type: object
+          properties:
+            answer:
+              type: string
+              description: 回答内容
+            sources:
+              type: array
+              items:
+                $ref: '#/components/schemas/Document'
+              description: 参照元ドキュメント
+            confidence:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 1
+              description: 信頼度
+      required:
+        - success
+        - data
+
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ドキュメントID
+        content:
+          type: string
+          description: ドキュメント内容
+        metadata:
+          type: object
+          additionalProperties: true
+          description: メタデータ
+      required:
+        - id
+        - content
+
+  responses:
+    BadRequest:
+      description: リクエストが不正です
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                description: エラーメッセージ
+            required:
+              - error
+
+    NotFound:
+      description: リソースが見つかりません
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                description: エラーメッセージ
+            required:
+              - error
+
+    InternalServerError:
+      description: サーバー内部エラー
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                description: エラーメッセージ
+            required:
+              - error 

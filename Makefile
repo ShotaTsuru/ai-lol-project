@@ -70,6 +70,71 @@ install: ## Install dependencies
 	cd frontend && npm install
 	cd backend && go mod tidy
 
+# OpenAPI code generation
+generate-openapi: ## Generate DTOs and API code from OpenAPI specification
+	@echo "🚀 Generating OpenAPI code..."
+	@chmod +x scripts/generate-dto.sh
+	@./scripts/generate-dto.sh
+
+generate-openapi-types: ## Generate only DTO types from OpenAPI specification
+	@echo "📝 Generating OpenAPI types..."
+	@if ! command -v oapi-codegen &> /dev/null; then \
+		echo "📦 Installing oapi-codegen..."; \
+		go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest; \
+	fi
+	@mkdir -p backend/dto/generated
+	@oapi-codegen -package generated -generate types openapi.yaml > backend/dto/generated/types.go
+	@echo "✅ OpenAPI types generated"
+
+generate-openapi-server: ## Generate server code from OpenAPI specification
+	@echo "🖥️  Generating OpenAPI server code..."
+	@if ! command -v oapi-codegen &> /dev/null; then \
+		echo "📦 Installing oapi-codegen..."; \
+		go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest; \
+	fi
+	@mkdir -p backend/dto/generated
+	@oapi-codegen -package generated -generate server openapi.yaml > backend/dto/generated/server.go
+	@echo "✅ OpenAPI server code generated"
+
+generate-openapi-spec: ## Generate spec validation from OpenAPI specification
+	@echo "🔍 Generating OpenAPI spec validation..."
+	@if ! command -v oapi-codegen &> /dev/null; then \
+		echo "📦 Installing oapi-codegen..."; \
+		go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest; \
+	fi
+	@mkdir -p backend/dto/generated
+	@oapi-codegen -package generated -generate spec openapi.yaml > backend/dto/generated/spec.go
+	@echo "✅ OpenAPI spec validation generated"
+
+validate-openapi: ## Validate OpenAPI specification
+	@echo "🔍 Validating OpenAPI specification..."
+	@if ! command -v oapi-codegen &> /dev/null; then \
+		echo "📦 Installing oapi-codegen..."; \
+		go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest; \
+	fi
+	@oapi-codegen -package dto -generate types openapi.yaml > /dev/null
+	@echo "✅ OpenAPI specification is valid"
+
+openapi-docs: ## Generate OpenAPI documentation
+	@echo "📚 Generating OpenAPI documentation..."
+	@if ! command -v swag &> /dev/null; then \
+		echo "📦 Installing swag..."; \
+		go install github.com/swaggo/swag/cmd/swag@latest; \
+	fi
+	@mkdir -p docs
+	@swag init -g backend/main.go -o docs
+	@echo "✅ OpenAPI documentation generated"
+
+clean-openapi: ## Clean generated OpenAPI files
+	@echo "🧹 Cleaning generated OpenAPI files..."
+	@rm -f backend/dto/generated/*.go
+	@echo "✅ Generated OpenAPI files cleaned"
+
+watch-openapi: ## Watch OpenAPI file changes and auto-generate code
+	@echo "👀 Starting OpenAPI file watcher..."
+	@chmod +x scripts/openapi-watch.sh
+	@./scripts/openapi-watch.sh
+
 # Environment setup
 setup: ## Set up development environment
 	cp env.example .env
@@ -79,6 +144,14 @@ setup: ## Set up development environment
 build-prod: ## Build for production
 	cd frontend && npm run build
 	cd backend && go build -o main main.go
+
+# Development workflow
+dev-setup: install generate-openapi ## Setup development environment with OpenAPI
+	@echo "✅ Development environment setup complete"
+
+dev-backend-with-openapi: generate-openapi ## Start backend with OpenAPI generation
+	@echo "🔄 Starting backend with latest OpenAPI code..."
+	cd backend && go run main.go
 
 # GitHub MCP setup
 mcp-setup: ## Setup GitHub MCP server configuration

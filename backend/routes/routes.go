@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func SetupRoutes(r *gin.Engine, db *gorm.DB, redis *redis.Client) {
+func SetupRoutes(r *gin.Engine, db *gorm.DB, redis *redis.Client, ragController *controllers.RAGController) {
 	// コントローラーの初期化
 	projectController := controllers.NewProjectController(db, redis)
 	fileController := controllers.NewFileController(db)
@@ -51,6 +51,15 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, redis *redis.Client) {
 			analysis.GET("/project/:project_id", analysisController.GetAnalysisByProject)
 			analysis.GET("/:id", analysisController.GetAnalysis)
 			analysis.GET("/:id/status", analysisController.GetAnalysisStatus)
+		}
+
+		// RAG機能
+		rag := v1.Group("/rag")
+		{
+			rag.POST("/query", ragController.Query)
+			rag.POST("/documents", ragController.AddDocuments)
+			rag.GET("/search", ragController.Search)
+			rag.GET("/health", ragController.HealthCheck)
 		}
 	}
 }
